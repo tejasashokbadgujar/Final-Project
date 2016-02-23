@@ -1,0 +1,308 @@
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml" itemscope itemtype="http://www.mathworks.com/help/schema/MathWorksDocPage">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Custom Documentation</title>
+<link rel="stylesheet" href="docstyle.css" type="text/css">
+  <meta http-equiv="Content-Script-Type" content="text/javascript">
+<meta name="toctype" itemprop="pagetype" content="cat">
+<meta name="infotype" itemprop="infotype" content="cat" />
+
+<script type="text/javascript" src="../includes/product/scripts/jquery/jquery-latest.js"></script>
+<script type="text/javascript" src="../includes/shared/scripts/l10n.js"></script>
+<script type="text/javascript" src="../includes/shared/scripts/docscripts.js"></script>
+<script type="text/javascript" src="../includes/product/scripts/docscripts.js"></script>
+<script type="text/javascript" src="../includes/shared/scripts/mw.toc.js"></script>
+<script type="text/javascript" src="../includes/shared/scripts/mw.imagescaling.js"></script>
+<script type="text/javascript" src="../includes/shared/scripts/mw.imageanimation.js"></script>
+<script type="text/javascript" src="../includes/shared/scripts/mw.breadcrumb.js"></script>
+<script type="text/javascript" src="../includes/shared/scripts/jquery.highlight.js"></script>
+<script type="text/javascript" src="../includes/shared/scripts/nanoscroller.min.js"></script>
+
+
+
+
+<script type="text/javascript" src="../includes/product/scripts/underscore-min.js"></script>
+<script type="text/javascript" src="../includes/product/scripts/jquery/jquery.toggleval.js"></script>
+<script type="text/javascript" src="../includes/product/scripts/localnav.js"></script>
+<script type="text/javascript" src="../includes/product/scripts/suggest.js"></script>
+<script type="text/javascript">
+                 var suggestionsObj;
+                 var demosroot = getParameterByName("exampledir");
+                 var docpage = getParameterByName("page");
+                 var docroot = getParameterByName("docroot");
+                 var exampledir = getParameterByName("exampledir");
+                 var examplepage = getParameterByName("examplepage");
+                 var helpdir = getParameterByName("helpdir");
+                 var languageDir = getParameterByName("languageDir");
+                 var matlabroot = getParameterByName("matlabroot");
+                 var mfile = getParameterByName("mfile");
+                 var mfiledesc = getParameterByName("mfiledesc");
+                 var mgui = getParameterByName("mgui");
+                 var mguidesc = getParameterByName("mguidesc");
+                 var model = getParameterByName("model");
+                 var modeldesc = getParameterByName("modeldesc");
+                 var pagetype = getParameterByName("pagetype");
+                 var productlink = getParameterByName("productlink");
+                 var uses = getParameterByName("uses");
+                 var video = getParameterByName("video");
+                 var videodesc = getParameterByName("videodesc");
+                 var pageexists = getParameterByName("pageexists");
+
+                 $(function() {
+                   var searchField = $('#docsearch');
+                   suggestionsObj = new Suggestions(getSuggestions, getMore, searchField);
+                   $("#doc_center_content").load(updateContentSize);
+                 });
+
+                 function getSuggestions() {
+                   var text = suggestionsObj.searchField.val();
+                   document.location='docsuggestion:' + text;
+                 }
+
+                 function getMore(type) {
+                   var text = suggestionsObj.searchField.val();
+                   document.location='docsuggestion:' + type + ':' + text;
+                 }
+
+                 function handleXmlContent(xmlString, tocXsltString, contentXsltString) {
+                   var contentXslt;
+                   if (window.ActiveXObject) {
+                     xmlDoc = new ActiveXObject("Msxml2.DOMDocument.3.0");
+                     xmlDoc.async = false;
+                     xmlDoc.loadXML(xmlString);
+                     tocXslt = new ActiveXObject("Msxml2.FreeThreadedDOMDocument.3.0");
+                     tocXslt.async = false;
+                     tocXslt.loadXML(tocXsltString);
+                     if (typeof contentXsltString != 'undefined') {
+                       contentXslt = new ActiveXObject("Msxml2.FreeThreadedDOMDocument.3.0");
+                       contentXslt.async = false;
+                       contentXslt.loadXML(contentXsltString);
+                     }
+                   } else if (window.DOMParser) {
+                     parser = new DOMParser();
+                     xmlDoc = parser.parseFromString(xmlString, "text/xml");
+                     tocXslt = parser.parseFromString(tocXsltString, "text/xml");
+                     if (typeof contentXsltString != 'undefined') {
+                       contentXslt = parser.parseFromString(contentXsltString, "text/xml");
+                     }
+                   }
+                   loadContent(xmlDoc, contentXslt);
+                   loadToc(xmlDoc, tocXslt);
+                 }
+
+                 function loadContent(xml, xsl) {
+                   if ((pagetype == "example") && (exampledir !== "") && (examplepage.indexOf("demos.xml") > -1)) {
+                     document.getElementById("doc_center_content").style.display = "none";
+                     XSLTransform(xml,xsl,"example_content");
+                   } else {
+                     var current_page;
+                     var current_dir;
+                     var page;
+                     if (pagetype == "doc") {
+                       current_page = docpage;
+                       current_dir = helpdir;
+                     } else {
+                       current_page = examplepage;
+                       current_dir = exampledir;
+                     }
+		     if (pageexists == "true") {
+                       var targetParts = current_page.split("#");
+                       page = current_dir + "/" + targetParts[0];
+                       if (page.indexOf("?") > -1) {
+                         page += "&";
+                       } else {
+                         page += "?";
+                       }
+                       page += "3pcontent=true";
+                       if (targetParts.length > 1) {
+                         page += "#" + targetParts[1];
+                       }
+		     } else {
+		       page = "3pblank.html";
+		     }
+                     var contentFrame = document.getElementById("doc_center_content");
+                     contentFrame.src = page;
+                   }
+                 }
+
+                 function updateContentSize() {
+                   var contentFrame = document.getElementById("doc_center_content");
+                   var contentDoc = contentFrame.contentWindow.document;
+                   var contentHeight = contentDoc.body.scrollHeight;
+                   var newHeight = parseInt(contentHeight,10) + 10;
+                   contentFrame.style.height = "" + newHeight + "px";
+                   var contentWidth = contentDoc.body.scrollWidth;
+                   var newWidth = parseInt(contentWidth, 10) + 10;
+                   contentFrame.style.width = "" + newWidth + "px";
+                   $(contentFrame).show();
+                   var title = contentDoc.title;
+                   if (title.length > 0) {
+                     document.title = title;
+                   }
+                   if (pagetype == "example") {
+                     contentFrame.style.marginTop = "";
+                   }
+                 }
+
+                 function XSLTransform(xml,xsl,id) {
+                   if (window.XSLTProcessor) {
+                     xsltProcessor = new XSLTProcessor();
+                     xsltProcessor.importStylesheet(xsl);
+                     xsltProcessor.setParameter(null, "demosroot", demosroot);
+                     xsltProcessor.setParameter(null, "docpage", docpage);
+                     xsltProcessor.setParameter(null, "docroot", docroot);
+                     xsltProcessor.setParameter(null, "exampledir", exampledir);
+                     xsltProcessor.setParameter(null, "examplepage", examplepage);
+                     xsltProcessor.setParameter(null, "helpdir", helpdir);
+                     xsltProcessor.setParameter(null, "languageDir", languageDir);
+                     xsltProcessor.setParameter(null, "matlabroot", matlabroot);
+                     xsltProcessor.setParameter(null, "mfile", mfile);
+                     xsltProcessor.setParameter(null, "mfiledesc", mfiledesc);
+                     xsltProcessor.setParameter(null, "mgui", mgui);
+                     xsltProcessor.setParameter(null, "mguidesc", mguidesc);
+                     xsltProcessor.setParameter(null, "model", model);
+                     xsltProcessor.setParameter(null, "modeldesc", modeldesc);
+                     xsltProcessor.setParameter(null, "pagetype", pagetype);
+                     xsltProcessor.setParameter(null, "productlink", productlink);
+                     xsltProcessor.setParameter(null, "uses", uses);
+                     xsltProcessor.setParameter(null, "video", video);
+                     xsltProcessor.setParameter(null, "videodesc", videodesc);
+                     if (examplepage.indexOf("demos.xml#") > -1) {
+                       var n = examplepage.lastIndexOf("#");
+                       xsltProcessor.setParameter(null, "section", decodeURIComponent(examplepage.substring(n+1)));
+                     }
+                     resultDocument = xsltProcessor.transformToFragment(xml, document);
+                     document.getElementById(id).appendChild(resultDocument);
+                   } else if (window.ActiveXObject) {
+                     var processor = new ActiveXObject("Msxml2.XSLTemplate.3.0");
+                     processor.stylesheet = xsl;
+                     var objXSLTProc = processor.createProcessor();
+                     objXSLTProc.input = xml;
+                     objXSLTProc.addParameter("demosroot", demosroot);
+                     objXSLTProc.addParameter("docpage", docpage);
+                     objXSLTProc.addParameter("docroot", docroot);
+                     objXSLTProc.addParameter("exampledir", exampledir);
+                     objXSLTProc.addParameter("examplepage", examplepage);
+                     objXSLTProc.addParameter("helpdir", helpdir);
+                     objXSLTProc.addParameter("languageDir", languageDir);
+                     objXSLTProc.addParameter("matlabroot", matlabroot);
+                     objXSLTProc.addParameter("mfile", mfile);
+                     objXSLTProc.addParameter("mfiledesc", mfiledesc);
+                     objXSLTProc.addParameter("mgui", mgui);
+                     objXSLTProc.addParameter("mguidesc", mguidesc);
+                     objXSLTProc.addParameter("model", model);
+                     objXSLTProc.addParameter("modeldesc", modeldesc);
+                     objXSLTProc.addParameter("pagetype", pagetype);
+                     objXSLTProc.addParameter("productlink", productlink);
+                     objXSLTProc.addParameter("uses", uses);
+                     objXSLTProc.addParameter("video", video);
+                     objXSLTProc.addParameter("videodesc", videodesc);
+                     if (examplepage.indexOf("demos.xml#") > -1) {
+                       var n = examplepage.lastIndexOf("#");
+                       objXSLTProc.addParameter("section", decodeURIComponent(examplepage.substring(n+1)));
+                     }
+                     objXSLTProc.transform();
+                     document.getElementById(id).innerHTML += objXSLTProc.output;
+                   }
+                   if (id == "example_content") {
+                     var headID = document.getElementsByTagName("head")[0];
+                     var cssNode = document.createElement("link");
+                     cssNode.type = "text/css";
+                     cssNode.rel = "stylesheet";
+                     cssNode.href = matlabroot + "/toolbox/matlab/helptools/private/demoindex.css";
+                     headID.appendChild(cssNode);
+                   }
+                 }
+
+                 function loadToc(xml, xsl) {
+                   if (pagetype == "doc") {
+                     XSLTransform(xml,xsl,"3ptoc");
+                     expandToc(docpage);
+                   } else {
+                     XSLTransform(xml,xsl,"3ptoc");
+                     expandToc(examplepage);
+                   }
+                 }
+
+                 function expandToc(page) {
+                   page = page.replace(/([;&,\.\+\*\~':"\!\^#$%@\[\]\(\)=>\|\/])/g, '\\$1');
+                   toc = $("#3ptoc");
+                   var current = toc.find('#' + page);
+                   current.addClass('current_page');
+                   if (current.hasClass("toc_collapsed")) {
+                     current.removeClass("toc_collapsed");
+                     current.addClass("toc_expanded");
+                   }
+                   var tocParents = current.parents();
+                   tocParents.removeClass("toc_collapsed");
+                   tocParents.addClass("toc_expanded");
+                 }
+               </script>
+<script type="text/javascript">
+           $(function() {
+               $('h3.expand').click(function() {
+                   var h3elt = $(this);
+                   h3elt.siblings('.collapse').slideToggle();
+                   h3elt.toggleClass('open');
+                   h3elt.children('a').toggleClass('open'); 
+               });
+               $('h3.expand').wrapInner('<a style="display:block" href="#" title="Expand/Collapse" />');
+           });</script>
+<link href="../includes/product/css/reset.css" rel="stylesheet" type="text/css">
+<link href="../includes/product/css/960.css" rel="stylesheet" type="text/css">
+<link href="../includes/product/css/site5.css" rel="stylesheet" type="text/css">
+<link href="../includes/product/css/doc_center.css" rel="stylesheet" type="text/css">
+<link href="../includes/product/css/doc_center_installed.css" rel="stylesheet" type="text/css">
+<link href="../includes/product/css/doc_center_print.css" rel="stylesheet" type="text/css" media="print">
+<script type="text/javascript" src="../../ui/equationrenderer/release/MathRenderer.js"></script>
+<script type="text/javascript">
+   $(document).ready(function(){
+
+   
+
+   });
+   </script>
+</head>
+<body>
+<div class="site_container site_toc_opened"><div class="toc_pane"><div xmlns:atict="http://www.arbortext.com/namespace/atict">
+<div class="toc_container_wrapper" tabindex="1" style="display:block;">
+<div class="toc_header" lang="en">
+<div class="toc_icon" id="toc.custom_documentation">
+</div>
+<h3>Contents</h3>
+</div><!--close_toc_header-->
+<div class="toc_scroll_pane">
+<div class="toc_container" id="3ptoc"><div class="toc_doc_center_home"><a href="../documentation-center.html">Documentation</a></div></div></div><!--close_toc_scroll_pane-->
+</div><!--close_toc_container_wrapper-->
+</div>
+</div><!--close_toc_pane-->
+                <div class="page_container" style="height:100%">
+                   <div class="content_frame" style="height:100%">
+                      <div class="content_container" id="content_container" style="height:100%">
+                <div id="search_crumb_container">
+<div class="docsearch_container">
+<form id="docsearch_form" name="docsearch_form" method="get" action="../templates/searchresults.html">
+<label for="docsearch" class="hidden">Search MATLAB Documentation</label>
+<input type="text" name="qdoc" id="docsearch" class="textfield" tabindex="0" autocomplete="off" value="Search Documentation">
+<input type="submit" name="submitsearch" id="submitsearch" value="Search" class="docsearch_submit">
+<script type="text/javascript">
+         $("input[name='qdoc']").toggleVal({
+            focusClass: "hasFocus"
+         });
+       </script>
+</form>
+</div>
+</div><style>
+             #search_crumb_container {padding-bottom:0px;}
+             .docsearch_container {margin:0px}
+          </style><iframe id="doc_center_content" style="height:0px;width:100%;margin-top:-30px" onload="updateContentSize();"></iframe><div id="example_content"></div><!--Last updated: Tue Dec 30 11:46:14 EST 2014-->
+
+                  </div> <!-- close_content_container -->
+                </div> <!-- close_content_frame -->
+              </div> <!--  close_page_container -->
+            
+            </div> <!--  close_site_container -->
+            </body>
+</html>

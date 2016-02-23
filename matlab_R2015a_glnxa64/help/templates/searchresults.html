@@ -1,0 +1,210 @@
+<!DOCTYPE HTML>
+
+<head>
+    <meta charset="utf-8">
+    <title id="search_results"></title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href="../includes/product/css/reset.css" rel="stylesheet" type="text/css"/>
+    <link href="../includes/product/css/960.css" rel="stylesheet" type="text/css"/>
+    <link href="../includes/product/css/site5.css" rel="stylesheet" type="text/css"/>
+    <link href="../includes/product/css/doc_center.css" rel="stylesheet" type="text/css"/>
+    <link href="../includes/product/css/doc_center_installed.css" rel="stylesheet" type="text/css"/>
+    <style>
+        #wait {
+            height: 600px;
+            padding-top: 50px;
+            width: 100%;
+            text-align: center;
+            font-size: 18px;
+        }
+    </style>
+    <script type="text/javascript"
+            src="../includes/product/scripts/jquery/jquery-latest.js"></script>
+    <script type="text/javascript"
+            src="../includes/product/scripts/underscore-min.js"></script>
+    <script type="text/javascript" src="../includes/product/scripts/localnav.js"></script>
+    <script type="text/javascript" src="../includes/product/scripts/global.js"></script>
+    <script type="text/javascript" src="../includes/product/scripts/search.js"></script>
+    <script type="text/javascript" src="../includes/product/scripts/suggest.js"></script>
+    <script type="text/javascript" src="../includes/product/scripts/tokenize.js"></script>
+    <script type="text/javascript" src="../includes/shared/scripts/l10n.js"></script>
+    <script type="text/javascript">
+        var suggestionsObj;
+        var get_facet_label;
+        function getSuggestions() {
+            var text = suggestionsObj.searchField.val();
+            document.location = 'docsuggestion:' + text;
+        }
+
+        function getMore(type) {
+            var text = suggestionsObj.searchField.val();
+            document.location = 'docsuggestion:' + type + ':' + text;
+        }
+
+        function populateResults(jsonObject) {
+            populateResultsList(jsonObject.searchresults);
+            populateResultData(jsonObject);
+            populateFacets(jsonObject.facetresults);
+        }
+
+        function populateResultsList(searchresults, searchTerm) {
+            var highlightTerm = "";
+            if (searchTerm && searchTerm.length > 0) {
+                highlightTerm = searchTerm;
+            } else if( $('#docsearch') && $('#docsearch').val() ){
+                highlightTerm = $('#docsearch').val();
+            }
+            $('#wait').remove();
+
+            var resultsHtml = '';
+            resultsHtml = getSearchResultsHtml(searchresults, highlightTerm);
+
+            var resultsDiv = $('#results_area');
+            resultsDiv.html(resultsHtml);
+        }
+
+        function populateResultData(jsonObject) {
+            var searchterm = jsonObject.searchterm;
+            var productbreadcrumb = jsonObject.productbreadcrumb;
+            var summarydata = jsonObject.summarydata;
+            var footerdata = jsonObject.footerdata;
+
+            $('#docsearch').val(searchterm);
+
+            $('.tokenized').tokenize({
+                fields: ["product", "category", "type"],
+                remove_if_empty: true,
+                label_function: get_facet_label
+            });
+
+
+            var summaryHtml = '';
+            summaryHtml = getSearchSummaryHtml(summarydata);
+
+            var summaryDiv = $('#summary_area_top');
+            summaryDiv.html(summaryHtml);
+
+            var footerHtml = '';
+            footerHtml = getSearchFooterHtml(footerdata);
+
+            var footerDiv = $('#summary_area_bottom');
+            footerDiv.html(footerHtml);
+
+            initializeSuggestionObj();
+        }
+
+        function populateFacets(facetJson) {
+            var facetHtml = '';
+            facetHtml = getFacetResultsHtml(facetJson);
+
+            var facetDiv = $('#facets_area');
+            facetDiv.html(facetHtml);
+        }
+
+        function displayError(error) {
+            $('#docsearch').val(error.searchtext);
+            var errorHtml = getErrorHtml(error.message);
+
+            var errorDiv = $('#results_area');
+            errorDiv.html(errorHtml);
+            initializeSuggestionObj();
+        }
+
+        function displayMessage(message) {
+            var messageDiv = $('#results_area');
+            messageDiv.empty();
+            $('#docsearch').val(message.searchtext);
+            messageDiv.append(getSuggestionsListHtml(message));
+            initializeSuggestionObj();
+        }
+
+        function populateLookupTable(facetLabelJson) {
+
+            var labels = {};
+            for (var facetLabel in facetLabelJson) {
+                if (facetLabelJson.hasOwnProperty(facetLabel)) {
+                    labels[facetLabelJson[facetLabel].field + ":" +
+                            facetLabelJson[facetLabel].value] = facetLabelJson[facetLabel].label;
+                }
+            }
+            get_facet_label = function (token) {
+                return labels[token.field + ":" + token.value];
+            }
+        }
+
+        function initializeSuggestionObj() {
+            var searchField = $('#docsearch');
+            suggestionsObj = new Suggestions(getSuggestions, getMore, searchField);
+        }
+    </script>
+</head>
+
+<body>
+<div class="container_192">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" class="doc_template_frame">
+        <tr>
+            <td class="doc_template_frame_subnav" id="facets_area"></td>
+            <td class="doc_template_frame_content">
+                <div class="content_container" id="content_container">
+                    <div class="docsearch_container">
+                        <div id="searchform_area">
+                            <form id="docsearch_form" name="docsearch_form" method="get"
+                                  action="searchresults.html">
+                                <label class="hidden">Search MATLAB Documentation</label>
+                                <label for="docsearch" class="hidden">Search MATLAB
+                                    Documentation</label>
+
+                                <div class="tokenized search_field"><input name="qdoc"
+                                                                           id="docsearch"
+                                                                           class="textfield"
+                                                                           autocomplete="off"
+                                                                           type="text"></div>
+                                <input type="submit" name="submitsearch" id="submitsearch"
+                                       value="Search" class="docsearch_submit"/>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="breadcrumb_container">
+                        <div class="breadcrumbs">
+                            <div class="breadcrumbs_outer">
+                                <div class="breadcrumbs_inner">
+                                    <ul>
+                                        <li itemscope=""
+                                            itemtype="http://www.data-vocabulary.org/Breadcrumb"
+                                            itemprop="breadcrumb"
+                                            class="breadcrumb_first breadcrumb_last">
+                                            <a href="../documentation-center.html"
+                                               itemprop="url"><span
+                                                    itemprop="title">R2013a</span></a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="summary_area_top"></div>
+                    <div id="results_area">
+                        <div id="wait">
+                            <img src="../includes/product/images/doc_center/progress.gif"/>
+                        </div>
+                    </div>
+                    <div id="summary_area_bottom"></div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    <div class="footer_container">
+        <div class="footer">
+            <ul class="footernav">
+                <li class="footernav_trademarks"><a id="acknowledgments" href="../acknowledgments.html"></a></li>
+                <li class="footernav_trademarks"><a id="trademarks" href="../../trademarks.txt"></a></li>
+                <li class="footernav_patents"><a id="patents" href="../../patents.txt"></a></li>
+                <li class="footernav_help"><a id="terms_of_use" href="../../license_agreement.txt"></a></li>
+            </ul>
+            <div class="copyright">&copy; 1994-<span id="current_year"></span> The MathWorks, Inc.
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

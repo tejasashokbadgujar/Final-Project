@@ -1,0 +1,14 @@
+/* Overrides for Installed Doc Center in the Product */
+/* Languages */
+html body { font-family: Arial, Gulim, sans-serif; }
+
+/* Expand - Collapse: Reveal */
+.reveal .more_results p:after { content:"more"; }
+.reveal .expanded .more_results p:after { content:"less"; }
+
+/* Expand All Control */
+.doc_topic_desc { padding-right:130px; }
+.doc_topic_desc .switch { width:120px; margin-right:-130px; }
+
+/* Function Reference */
+.input_argument_container h2 { font-style:normal; }
